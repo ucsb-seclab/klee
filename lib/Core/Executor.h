@@ -527,6 +527,7 @@ public:
   /*** State accessor methods ***/
 
   unsigned getPathStreamID(const ExecutionState &state) override;
+  std::string getGrillerString(const ExecutionState &state) override;
 
   unsigned getSymbolicPathStreamID(const ExecutionState &state) override;
 

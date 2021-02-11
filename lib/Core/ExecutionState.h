@@ -263,6 +263,8 @@ public:
   bool merge(const ExecutionState &b);
   void dumpStack(llvm::raw_ostream &out) const;
 
+  std::string griller_string; 
+
   std::uint32_t getID() const { return id; };
   void setID() { id = nextID++; };
 };

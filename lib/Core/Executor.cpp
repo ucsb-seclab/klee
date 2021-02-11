@@ -4380,6 +4380,10 @@ unsigned Executor::getPathStreamID(const ExecutionState &state) {
   return state.pathOS.getID();
 }
 
+std::string Executor::getGrillerString(const ExecutionState &state) {
+  return state.griller_string;
+}
+
 unsigned Executor::getSymbolicPathStreamID(const ExecutionState &state) {
   assert(symPathWriter);
   return state.symPathOS.getID();

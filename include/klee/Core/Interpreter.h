@@ -147,6 +147,7 @@ public:
   /*** State accessor methods ***/
 
   virtual unsigned getPathStreamID(const ExecutionState &state) = 0;
+  virtual std::string getGrillerString(const ExecutionState &state) = 0;
 
   virtual unsigned getSymbolicPathStreamID(const ExecutionState &state) = 0;
 
