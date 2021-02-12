@@ -245,9 +245,6 @@ protected:
   /// The query to print
   const Query *query;
 
-  /// Determine the SMTLIBv2 sort of the expression
-  SMTLIB_SORT getSort(const ref<Expr> &e);
-
   /// Print an expression but cast it to a particular SMTLIBv2 sort first.
   void printCastToSort(const ref<Expr> &e, ExprSMTLIBPrinter::SMTLIB_SORT sort);
 
