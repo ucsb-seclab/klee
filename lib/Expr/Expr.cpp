@@ -11,6 +11,7 @@
 
 #include "klee/Config/Version.h"
 #include "klee/Expr/ExprPPrinter.h"
+#include "klee/Expr/ExprSMTLIBPrinter.h"
 #include "klee/Support/OptionCategories.h"
 // FIXME: We shouldn't need this once fast constant support moves into
 // Core. If we need to do arithmetic, we probably want to use APInt.
@@ -321,7 +322,10 @@ ref<Expr> Expr::createIsZero(ref<Expr> e) {
 }
 
 void Expr::print(llvm::raw_ostream &os) const {
-  ExprPPrinter::printSingleExpr(os, const_cast<Expr*>(this));
+  ExprSMTLIBPrinter p;
+  p.setOutput(os);
+  p.printExpression(const_cast<Expr*>(this), p.getSort(const_cast<Expr*>(this)));
+  // ExprPPrinter::printSingleExpr(os, const_cast<Expr*>(this));
 }
 
 void Expr::dump() const {
