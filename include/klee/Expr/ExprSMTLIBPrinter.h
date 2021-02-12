@@ -219,6 +219,14 @@ public:
   /// cast will be performed.
   /// \param abbrMode the abbreviation mode to use for this expression
   void printExpression(const ref<Expr> &e, SMTLIB_SORT expectedSort);
+  
+  /// Scan Expression recursively for Arrays in expressions. Found arrays are
+  /// added to
+  /// the usedArrays vector.
+  void scan(const ref<Expr> &e);
+  
+  // Print SMTLIBv2 assertions for constant arrays
+  void printArrayDeclarations();
 
 protected:
   /// Contains the arrays found during scans
@@ -263,9 +271,6 @@ protected:
   // Print SMTLIBv2 logic to use e.g. (set-logic QF_ABV)
   void printSetLogic();
 
-  // Print SMTLIBv2 assertions for constant arrays
-  void printArrayDeclarations();
-
   // Print SMTLIBv2 for the query optimised for human readability
   void printHumanReadableQuery();
 
@@ -287,11 +292,6 @@ protected:
   /// Print a Constant in the format specified by the current "Constant Display
   /// Mode"
   void printConstant(const ref<ConstantExpr> &e);
-
-  /// Scan Expression recursively for Arrays in expressions. Found arrays are
-  /// added to
-  /// the usedArrays vector.
-  void scan(const ref<Expr> &e);
 
   /// Scan bindings for expression intra-dependencies. The result is written
   /// to the orderedBindings vector that is later used for nested expression

@@ -324,6 +324,8 @@ ref<Expr> Expr::createIsZero(ref<Expr> e) {
 void Expr::print(llvm::raw_ostream &os) const {
   ExprSMTLIBPrinter p;
   p.setOutput(os);
+  p.scan(const_cast<Expr*>(this));
+  p.printArrayDeclarations();
   p.printExpression(const_cast<Expr*>(this), p.getSort(const_cast<Expr*>(this)));
   // ExprPPrinter::printSingleExpr(os, const_cast<Expr*>(this));
 }
