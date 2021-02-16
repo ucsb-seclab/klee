@@ -567,9 +567,10 @@ void SpecialFunctionHandler::handlePrintExpr(ExecutionState &state,
 
   std::string msg_str = readStringAtAddress(state, arguments[0]);
   std::stringstream ss;
-  ss << msg_str << ":";
+  ss << arguments[1]->printArrayDeclarations();
+  ss << "(declare-fun " << msg_str << " () ";
   ss << arguments[1];
-  ss << "\n";
+  ss << ")\n";
   state.griller_string.append(ss.str());
 }
 

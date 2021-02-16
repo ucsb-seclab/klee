@@ -214,6 +214,7 @@ public:
   virtual ref<Expr> getKid(unsigned i) const = 0;
     
   virtual void print(llvm::raw_ostream &os) const;
+  virtual std::string printArrayDeclarations(void) const;
 
   /// dump - Print the expression to stderr.
   void dump() const;
