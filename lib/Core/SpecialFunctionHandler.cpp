@@ -658,9 +658,22 @@ void SpecialFunctionHandler::handleGetObjSize(ExecutionState &state,
   executor.resolveExact(state, arguments[0], rl, "klee_get_obj_size");
   for (Executor::ExactResolutionList::iterator it = rl.begin(), 
          ie = rl.end(); it != ie; ++it) {
+    
+    unsigned int size = it->first.first->size;
+    if (ConstantExpr *CE = dyn_cast<ConstantExpr>(arguments[0])) {
+      if (CE->getZExtValue() > it->first.first->address) {
+        size = size - (CE->getZExtValue() - it->first.first->address);
+      }
+    }
+    // llvm::dbgs() << "Size : " << it->first.first->size << "\n";
+    // llvm::dbgs() << "Address : " << it->first.first->address << "\n";
+    // llvm::dbgs() << "Target : ";
+    // target->inst->dump();
+    // target->inst->getType()->dump();
+    // llvm::dbgs() << "BitSize : " << executor.kmodule->targetData->getTypeSizeInBits(target->inst->getType()) << "\n";
     executor.bindLocal(
         target, *it->second,
-        ConstantExpr::create(it->first.first->size,
+        ConstantExpr::create(size,
                              executor.kmodule->targetData->getTypeSizeInBits(
                                  target->inst->getType())));
   }

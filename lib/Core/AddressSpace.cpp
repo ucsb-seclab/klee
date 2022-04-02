@@ -209,8 +209,12 @@ bool AddressSpace::resolve(ExecutionState &state, TimingSolver *solver,
                            unsigned maxResolutions, time::Span timeout) const {
   if (ConstantExpr *CE = dyn_cast<ConstantExpr>(p)) {
     ObjectPair res;
-    if (resolveOne(CE, res))
+    //llvm::dbgs() << "resolve " << CE->getZExtValue() << "\n";
+    if (resolveOne(CE, res)) {
+      //llvm::dbgs() << "  resolved to " << res.first->address << "\n";
+      //llvm::dbgs() << "Value : " << res.first->getBaseExpr() << "\n";
       rl.push_back(res);
+    }
     return false;
   } else {
     TimerStatIncrementer timer(stats::resolveTime);

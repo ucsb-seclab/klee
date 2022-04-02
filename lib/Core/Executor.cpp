@@ -4044,12 +4044,20 @@ void Executor::resolveExact(ExecutionState &state,
   // XXX we may want to be capping this?
   ResolutionList rl;
   state.addressSpace.resolve(state, solver, p, rl);
-  
   ExecutionState *unbound = &state;
   for (ResolutionList::iterator it = rl.begin(), ie = rl.end(); 
        it != ie; ++it) {
-    ref<Expr> inBounds = EqExpr::create(p, it->first->getBaseExpr());
-    
+    ref<Expr> inBounds; 
+    if (ConstantExpr *CE = dyn_cast<ConstantExpr>(p)) {
+      if (CE->getZExtValue() != it->first->address) {
+        inBounds = EqExpr::create(it->first->getBaseExpr(), it->first->getBaseExpr());
+      } else {
+        inBounds = EqExpr::create(p, it->first->getBaseExpr());  
+      }
+    } else {
+      inBounds = EqExpr::create(p, it->first->getBaseExpr());
+    }
+
     StatePair branches = fork(*unbound, inBounds, true);
     
     if (branches.first)
