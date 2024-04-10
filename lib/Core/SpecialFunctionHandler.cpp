@@ -661,10 +661,30 @@ void SpecialFunctionHandler::handleGetObjSize(ExecutionState &state,
     
     unsigned int size = it->first.first->size;
     if (ConstantExpr *CE = dyn_cast<ConstantExpr>(arguments[0])) {
+      // klee_message("Concrete address in klee_get_obj_size");
       if (CE->getZExtValue() > it->first.first->address) {
         size = size - (CE->getZExtValue() - it->first.first->address);
+      } else if (CE->getZExtValue() < it->first.first->address) {
+        executor.terminateStateOnError(state, "Address resolved to a value less than the current pointer (constant) in klee_get_obj_size", Executor::User);
+      }
+    } else {
+      // klee_message("Symbolic address in klee_get_obj_size");
+      // if the arguments[0] is symbolic, get a value from the solver
+      ref<ConstantExpr> cex;
+      if (!executor.getValueFromSeed(state, arguments[0], cex)) {
+        executor.terminateStateOnError(state, "Could not get resolvable value for the address in klee_get_obj_size", Executor::User);
+      }
+      uint64_t result = cex->getZExtValue();
+      // klee_message("Resolved address : %lx", result);
+      // klee_message("Object address : %lx", it->first.first->address);
+      // klee_message("Object size : %d", it->first.first->size);
+      if (result > it->first.first->address) {
+        size = size - (result - it->first.first->address);
+      } else if (result < it->first.first->address) {
+        executor.terminateStateOnError(state, "Address resolved to a value less than the current pointer (symbolic) in klee_get_obj_size", Executor::User);
       }
     }
+
     // llvm::dbgs() << "Size : " << it->first.first->size << "\n";
     // llvm::dbgs() << "Address : " << it->first.first->address << "\n";
     // llvm::dbgs() << "Target : ";

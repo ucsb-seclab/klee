@@ -1341,6 +1341,32 @@ void Executor::executeGetValue(ExecutionState &state,
   }
 }
 
+bool Executor::getValueFromSeed(ExecutionState &state, ref<Expr> expr,
+                                ref<ConstantExpr> &result) {
+  std::map< ExecutionState*, std::vector<SeedInfo> >::iterator it = 
+    seedMap.find(&state);
+  bool isSeeding = it != seedMap.end();
+  if (isSeeding && OnlyReplaySeeds) {
+    for (std::vector<SeedInfo>::iterator siit = it->second.begin(), 
+           siie = it->second.end(); siit != siie; ++siit) {
+      ref<Expr> cond = siit->assignment.evaluate(expr);
+      ref<ConstantExpr> value;
+      bool success = solver->getValue(state.constraints, cond, value,
+                                      state.queryMetaData);
+      assert(success && "FIXME: Unhandled solver failure");
+      (void) success;
+      if (value->getWidth() == expr->getWidth()) {
+        result = value;
+        return true;
+      } else {
+        terminateStateOnError(state, "(Grill - getValueFromSeed) Seed value has different width", User);
+      }
+    }
+  } 
+  // This only works when we are replaying seeds 
+  return false;
+}
+
 void Executor::printDebugInstructions(ExecutionState &state) {
   // print nothing if option unset
   if (DebugPrintInstructions.getBits() == 0)
@@ -4045,19 +4071,30 @@ void Executor::resolveExact(ExecutionState &state,
   ResolutionList rl;
   state.addressSpace.resolve(state, solver, p, rl);
   ExecutionState *unbound = &state;
+
+  // This loop helps to find the exact object that the pointer points to
+  // but does not check if the pointer is in bounds of the object.
+
   for (ResolutionList::iterator it = rl.begin(), ie = rl.end(); 
        it != ie; ++it) {
+    // klee_message("resolveExact(%s) with %lx as address", name.c_str(), it->first->address);
+    // klee_message("Inside the loop\n");
     ref<Expr> inBounds; 
+    // p->dump();
     if (ConstantExpr *CE = dyn_cast<ConstantExpr>(p)) {
+      // klee_message("CE is %lx\n", CE->getZExtValue());
       if (CE->getZExtValue() != it->first->address) {
         inBounds = EqExpr::create(it->first->getBaseExpr(), it->first->getBaseExpr());
       } else {
         inBounds = EqExpr::create(p, it->first->getBaseExpr());  
       }
     } else {
+      // klee_message("CE is not constant\n");
+      // it->first->getBaseExpr()->dump();
       inBounds = EqExpr::create(p, it->first->getBaseExpr());
     }
 
+    // inBounds->dump();
     StatePair branches = fork(*unbound, inBounds, true);
     
     if (branches.first)
@@ -4067,11 +4104,39 @@ void Executor::resolveExact(ExecutionState &state,
     if (!unbound) // Fork failure
       break;
   }
+  
+  if (unbound) {
+    // This is this case when the pointer is somewhere in the middle of the object
+    // or the pointer is out of bounds of the object.
+    for (ResolutionList::iterator it = rl.begin(), ie = rl.end(); 
+        it != ie; ++it) {
+      ref<Expr> inBounds;
+      if (ConstantExpr *CE = dyn_cast<ConstantExpr>(p)) {
+        terminateStateOnError(*unbound, "resolveExact error: unbound and constant invalid pointer (Not handled for griller): " + name,
+                              Ptr, NULL, getAddressInfo(*unbound, p));
+      } else {
+        // if the pointer is a symbolic expression
+        // Expression to be created = p >= it->first->getBaseExpr() && p < it->first->getBaseExpr() + it->first->size
+        inBounds = AndExpr::create(UgeExpr::create(p, it->first->getBaseExpr()), 
+                                   UltExpr::create(p, AddExpr::create(it->first->getBaseExpr(), 
+                                                                     ConstantExpr::create(it->first->size, p->getWidth()))));
+      }
+
+      StatePair branches = fork(*unbound, inBounds, true);
+      
+      if (branches.first)
+        results.push_back(std::make_pair(*it, branches.first));
+
+      unbound = branches.second;
+      if (!unbound) // Fork failure
+        break;
+    }
+  }
 
   if (unbound) {
     terminateStateOnError(*unbound, "memory error: invalid pointer: " + name,
                           Ptr, NULL, getAddressInfo(*unbound, p));
-  }
+  } 
 }
 
 void Executor::executeMemoryOperation(ExecutionState &state,

@@ -255,6 +255,9 @@ private:
 			    llvm::BasicBlock *src,
 			    ExecutionState &state);
 
+  bool getValueFromSeed(ExecutionState &state, ref<Expr> expr,
+                                ref<ConstantExpr> &result);
+
   void callExternalFunction(ExecutionState &state,
                             KInstruction *target,
                             llvm::Function *function,
