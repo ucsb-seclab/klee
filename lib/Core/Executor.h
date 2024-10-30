@@ -279,7 +279,8 @@ private:
   void resolveExact(ExecutionState &state,
                     ref<Expr> p,
                     ExactResolutionList &results,
-                    const std::string &name);
+                    const std::string &name,
+                    bool throwOnError = true);
 
   /// Allocate and bind a new object in a particular state. NOTE: This
   /// function may fork.

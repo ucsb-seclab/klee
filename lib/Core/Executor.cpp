@@ -954,7 +954,7 @@ void Executor::branch(ExecutionState &state,
   }
 
   for (unsigned i=0; i<N; ++i)
-    if (result[i])
+    if (result[i] && !OnlyReplaySeeds)
       addConstraint(*result[i], conditions[i]);
 }
 
@@ -1301,6 +1301,7 @@ void Executor::executeGetValue(ExecutionState &state,
   std::map< ExecutionState*, std::vector<SeedInfo> >::iterator it = 
     seedMap.find(&state);
   if (it==seedMap.end() || isa<ConstantExpr>(e)) {
+    klee_message("Executor->executeGetValue() -> not a seedMap\n");
     ref<ConstantExpr> value;
     e = optimizer.optimizeExpr(e, true);
     bool success =
@@ -1310,10 +1311,11 @@ void Executor::executeGetValue(ExecutionState &state,
     bindLocal(target, state, value);
   } else {
     std::set< ref<Expr> > values;
+    klee_message("Executor->executeGetValue() -> is a seedMap\n");
     for (std::vector<SeedInfo>::iterator siit = it->second.begin(), 
            siie = it->second.end(); siit != siie; ++siit) {
       ref<Expr> cond = siit->assignment.evaluate(e);
-      cond = optimizer.optimizeExpr(cond, true);
+      // cond = optimizer.optimizeExpr(cond, true);
       ref<ConstantExpr> value;
       bool success =
           solver->getValue(state.constraints, cond, value, state.queryMetaData);
@@ -4065,7 +4067,8 @@ void Executor::executeFree(ExecutionState &state,
 void Executor::resolveExact(ExecutionState &state,
                             ref<Expr> p,
                             ExactResolutionList &results, 
-                            const std::string &name) {
+                            const std::string &name,
+                            bool throwOnFailure) {
   p = optimizer.optimizeExpr(p, true);
   // XXX we may want to be capping this?
   ResolutionList rl;
@@ -4134,8 +4137,13 @@ void Executor::resolveExact(ExecutionState &state,
   }
 
   if (unbound) {
-    terminateStateOnError(*unbound, "memory error: invalid pointer: " + name,
+    if (throwOnFailure) {
+      terminateStateOnError(*unbound, "memory error: invalid pointer: " + name,
                           Ptr, NULL, getAddressInfo(*unbound, p));
+    } else {
+      results.clear();
+      klee_message("Invalid pointer: %s - trying to continue", name.c_str());
+    }
   } 
 }
 

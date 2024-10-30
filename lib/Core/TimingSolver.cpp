@@ -15,6 +15,7 @@
 #include "klee/Statistics/Statistics.h"
 #include "klee/Statistics/TimerStatIncrementer.h"
 #include "klee/Solver/Solver.h"
+#include "klee/Support/ErrorHandling.h"
 
 #include "CoreStats.h"
 
@@ -92,15 +93,20 @@ bool TimingSolver::getValue(const ConstraintSet &constraints, ref<Expr> expr,
                             SolverQueryMetaData &metaData) {
   // Fast path, to avoid timer and OS overhead.
   if (ConstantExpr *CE = dyn_cast<ConstantExpr>(expr)) {
+    // klee_message("TimingSolver::getValue() -> ConstantExpr : ");
+    // expr->dump();
     result = CE;
     return true;
   }
   
   TimerStatIncrementer timer(stats::solverTime);
 
-  if (simplifyExprs)
+  if (simplifyExprs) {
+    // klee_message("TimingSolver::getValue() -> simplifyExpr\n");
     expr = ConstraintManager::simplifyExpr(constraints, expr);
+  }
 
+  // klee_message("TimingSolver::getValue() -> solver->getValue\n");
   bool success = solver->getValue(Query(constraints, expr), result);
 
   metaData.queryCost += timer.delta();

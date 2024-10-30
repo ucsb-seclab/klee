@@ -655,10 +655,11 @@ void SpecialFunctionHandler::handleGetObjSize(ExecutionState &state,
   assert(arguments.size()==1 &&
          "invalid number of arguments to klee_get_obj_size");
   Executor::ExactResolutionList rl;
-  executor.resolveExact(state, arguments[0], rl, "klee_get_obj_size");
+  executor.resolveExact(state, arguments[0], rl, "klee_get_obj_size", false);
+  bool sflag = false;
   for (Executor::ExactResolutionList::iterator it = rl.begin(), 
          ie = rl.end(); it != ie; ++it) {
-    
+    sflag = true;
     unsigned int size = it->first.first->size;
     if (ConstantExpr *CE = dyn_cast<ConstantExpr>(arguments[0])) {
       // klee_message("Concrete address in klee_get_obj_size");
@@ -696,6 +697,14 @@ void SpecialFunctionHandler::handleGetObjSize(ExecutionState &state,
         ConstantExpr::create(size,
                              executor.kmodule->targetData->getTypeSizeInBits(
                                  target->inst->getType())));
+  }
+  
+  if (!sflag) {
+    klee_message("No object found in klee_get_obj_size");
+    executor.bindLocal(
+        target, state,
+        ConstantExpr::create(-1, executor.kmodule->targetData->getTypeSizeInBits(
+                                    target->inst->getType())));
   }
 }
 
