@@ -262,6 +262,7 @@ void ObjectState::flushRangeForRead(unsigned rangeBase,
                                     unsigned rangeSize) const {
   if (!flushMask) flushMask = new BitArray(size, true);
  
+  // klee_message("flushing %d bytes", rangeSize);
   for (unsigned offset=rangeBase; offset<rangeBase+rangeSize; offset++) {
     if (!isByteFlushed(offset)) {
       if (isByteConcrete(offset)) {
@@ -444,6 +445,7 @@ ref<Expr> ObjectState::read(ref<Expr> offset, Expr::Width width) const {
   unsigned NumBytes = width / 8;
   assert(width == NumBytes * 8 && "Invalid read size!");
   ref<Expr> Res(0);
+  // klee_message("read: %d bytes", NumBytes);
   for (unsigned i = 0; i != NumBytes; ++i) {
     unsigned idx = Context::get().isLittleEndian() ? i : (NumBytes - i - 1);
     ref<Expr> Byte = read8(AddExpr::create(offset, 

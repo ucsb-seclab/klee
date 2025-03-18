@@ -567,11 +567,15 @@ void SpecialFunctionHandler::handlePrintExpr(ExecutionState &state,
 
   std::string msg_str = readStringAtAddress(state, arguments[0]);
   std::stringstream ss;
-  ss << arguments[1]->printArrayDeclarations();
-  ss << "(arg-value " << msg_str << " () ";
-  ss << arguments[1];
-  ss << ")\n";
-  state.griller_string.append(ss.str());
+  std::stringstream tmpstr;
+  tmpstr << arguments[1];
+  if (tmpstr.str().length() < 20000) {
+    ss << arguments[1]->printArrayDeclarations();
+    ss << "(arg-value " << msg_str << " () ";
+    ss << tmpstr.str();
+    ss << ")\n";
+    state.griller_string.append(ss.str());
+  }
 }
 
 void SpecialFunctionHandler::handleSetForking(ExecutionState &state,

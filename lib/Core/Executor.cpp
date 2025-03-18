@@ -1301,7 +1301,6 @@ void Executor::executeGetValue(ExecutionState &state,
   std::map< ExecutionState*, std::vector<SeedInfo> >::iterator it = 
     seedMap.find(&state);
   if (it==seedMap.end() || isa<ConstantExpr>(e)) {
-    klee_message("Executor->executeGetValue() -> not a seedMap\n");
     ref<ConstantExpr> value;
     e = optimizer.optimizeExpr(e, true);
     bool success =
@@ -1311,7 +1310,6 @@ void Executor::executeGetValue(ExecutionState &state,
     bindLocal(target, state, value);
   } else {
     std::set< ref<Expr> > values;
-    klee_message("Executor->executeGetValue() -> is a seedMap\n");
     for (std::vector<SeedInfo>::iterator siit = it->second.begin(), 
            siie = it->second.end(); siit != siie; ++siit) {
       ref<Expr> cond = siit->assignment.evaluate(e);
@@ -2025,6 +2023,7 @@ Function* Executor::getTargetFunction(Value *calledVal, ExecutionState &state) {
 
 void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
   Instruction *i = ki->inst;
+  //llvm::dbgs() << ".";
   switch (i->getOpcode()) {
     // Control flow
   case Instruction::Ret: {
@@ -2033,7 +2032,9 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
     Instruction *caller = kcaller ? kcaller->inst : 0;
     bool isVoidReturn = (ri->getNumOperands() == 0);
     ref<Expr> result = ConstantExpr::alloc(0, Expr::Bool);
-    
+
+    // llvm::dbgs() << "Ret\n";
+
     if (!isVoidReturn) {
       result = eval(ki, 0, state).value;
     }
@@ -2378,7 +2379,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
     unsigned numArgs = cs.arg_size();
     Function *f = getTargetFunction(fp, state);
-
+   
+    // R3x
+    // if (f && f->hasName()) {
+    //   llvm::dbgs() << "Call to: " << f->getName() << "\n";
+    // }
     if (isa<InlineAsm>(fp)) {
       terminateStateOnExecError(state, "inline assembly is unsupported");
       break;
@@ -4252,6 +4257,7 @@ void Executor::executeMemoryOperation(ExecutionState &state,
           wos->write(mo->getOffsetExpr(address), value);
         }
       } else {
+        // klee_message("Inside executeMemoryOperation\n");
         ref<Expr> result = os->read(mo->getOffsetExpr(address), type);
         bindLocal(target, *bound, result);
       }

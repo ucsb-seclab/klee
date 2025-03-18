@@ -11,6 +11,7 @@
 
 #include "klee/Expr/Expr.h"
 
+#include "klee/Support/ErrorHandling.h"
 #include "llvm/Support/CommandLine.h"
 
 namespace {

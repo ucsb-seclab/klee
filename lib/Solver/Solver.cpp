@@ -11,6 +11,7 @@
 
 #include "klee/Expr/Constraints.h"
 #include "klee/Solver/SolverImpl.h"
+#include "klee/Support/ErrorHandling.h"
 
 using namespace klee;
 
@@ -80,12 +81,16 @@ bool Solver::mayBeFalse(const Query& query, bool &result) {
 
 bool Solver::getValue(const Query& query, ref<ConstantExpr> &result) {
   // Maintain invariants implementation expect.
+
+  // klee_message("solver::getValue\n");
   if (ConstantExpr *CE = dyn_cast<ConstantExpr>(query.expr)) {
+    // klee_message("solver::getValue() -> ConstantExpr\n");
     result = CE;
     return true;
   }
 
   // FIXME: Push ConstantExpr requirement down.
+  // klee_message("solver::getValue() -> computeValue\n");
   ref<Expr> tmp;
   if (!impl->computeValue(query, tmp))
     return false;
